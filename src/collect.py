@@ -251,10 +251,6 @@ if __name__ == "__main__":
     start_date = '2020-01-01'  # Replace with the desired start date
     end_date = '2024-10-15'  # Replace with the desired end date
 
-    #############
-    # analyze_stock(stock_symbol, start_date='2020-01-01', end_date='2024-10-15')
-
-    
     # Get historical data for the single stock
     historical_data = get_stock_historical_data(stock_symbol, start_date, end_date)
 
@@ -272,6 +268,9 @@ if __name__ == "__main__":
 
     # Display the recommendation
     print(f"Stock Recommendation for Today: {stock_symbol}: {recommendation}")
+
+    # Analyze stock
+    analyze_stock(stock_symbol, start_date='2020-01-01', end_date='2024-10-15')
 
 # symbol = 'SUZLON.NS'
 # df = get_stock_history(symbol, '2020-10-01', '2024-10-14')
