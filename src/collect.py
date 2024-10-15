@@ -5,6 +5,9 @@ import matplotlib.pyplot as plt
 from matplotlib.dates import DateFormatter, MonthLocator, YearLocator, DayLocator
 import plotly.graph_objects as go
 import seaborn as sns
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
 import time
 import datetime
 
@@ -200,11 +203,75 @@ def analyze_stock(stock_symbol, start_date='2020-01-01', end_date='2024-10-15'):
     # Step 2: Perform basic analysis
     basic_analysis(csv_filename)
 
+# Function to prepare data for modeling
+def prepare_data(df):
+    # print(df)
+    # return
+    # Convert 'Close' to numeric, coercing errors (in case there are any non-numeric values)
+    df['Close'] = pd.to_numeric(df['Close'], errors='coerce')
+
+    df['Price Change'] = df['Close'].diff()
+    df['Price Change %'] = (df['Price Change'] / df['Close'].shift(1)) * 100
+    df['Target'] = df['Price Change %'].shift(-1)  # Predict the next day's change
+
+    # Drop rows with NaN values
+    df = df.dropna()
+
+    return df[['Close', 'Price Change %', 'Target']]
+
+# Function to predict stock performance
+def predict_stock_performance(stock_data):
+    X = stock_data[['Close', 'Price Change %']]
+    y = stock_data['Target']
+
+    # Split the data into training and testing sets
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    # Train a linear regression model
+    model = LinearRegression()
+    model.fit(X_train, y_train)
+
+    # Predict on the test set
+    predictions = model.predict(X_test)
+
+    # Return predictions
+    return predictions, y_test
+
+# Function to decide which stock to buy
+def decide_which_to_buy(predictions, actuals):
+    results = pd.DataFrame({'Predicted': predictions, 'Actual': actuals})
+    results['Recommendation'] = np.where(results['Predicted'] > 0, 'Buy', 'Hold')
+    return results
+
 # Example: Analyzing Tata Consultancy Services (TCS) stock
 if __name__ == "__main__":
     # Example stock symbols for Indian companies
-    stock_symbol = 'SUZLON.NS'  # Tata Consultancy Services (TCS) on NSE
-    analyze_stock(stock_symbol, start_date='2020-01-01', end_date='2024-10-15')
+    # stock_symbol = 'SUZLON.NS'  # Tata Consultancy Services (TCS) on NSE
+    stock_symbol = input("Enter the stock symbol: ")  # User will enter the desired stock symbol
+    start_date = '2020-01-01'  # Replace with the desired start date
+    end_date = '2024-10-15'  # Replace with the desired end date
+
+    #############
+    # analyze_stock(stock_symbol, start_date='2020-01-01', end_date='2024-10-15')
+
+    
+    # Get historical data for the single stock
+    historical_data = get_stock_historical_data(stock_symbol, start_date, end_date)
+
+    # Prepare the data
+    prepared_data = prepare_data(historical_data)
+
+    # Predict stock performance
+    predictions, actuals = predict_stock_performance(prepared_data)
+
+    # Decide which stocks to buy
+    result = decide_which_to_buy(predictions, actuals)
+
+    # Get the last prediction for today's decision
+    recommendation = result.iloc[-1]['Recommendation']
+
+    # Display the recommendation
+    print(f"Stock Recommendation for Today: {stock_symbol}: {recommendation}")
 
 # symbol = 'SUZLON.NS'
 # df = get_stock_history(symbol, '2020-10-01', '2024-10-14')
@@ -215,6 +282,8 @@ if __name__ == "__main__":
 # df.to_csv(csv_filename, index=False)
 # # print(f"Data exported to {csv_filename}")
 # basic_analysis(csv_filename)
+
+
 
 
 
